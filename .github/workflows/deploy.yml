@@ -1,0 +1,60 @@
+name: Deploy Zuvello Backend to EC2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy backend to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+
+            echo "Starting Zuvello deployment..."
+
+            cd /opt/apps/zuvello
+
+            echo "Pulling latest code..."
+            git pull origin main
+
+            echo "Building Docker image..."
+            cd backend
+            sudo docker build -t zuvello-api:latest .
+
+            echo "Stopping old container..."
+            sudo docker stop zuvello-api || true
+
+            echo "Removing old container..."
+            sudo docker rm zuvello-api || true
+
+            echo "Starting new container..."
+            sudo docker run -d \
+              --name zuvello-api \
+              --env-file /opt/apps/zuvello/env/production.env \
+              -p 127.0.0.1:3004:3001 \
+              --restart always \
+              zuvello-api:latest
+
+            echo "Waiting for container..."
+            sleep 10
+
+            echo "Checking container..."
+            sudo docker ps --filter "name=zuvello-api"
+
+            echo "Checking application..."
+            curl --fail http://127.0.0.1:3004/ || exit 1
+
+            echo "Deployment successful!"
