@@ -128,14 +128,6 @@ const Hero = () => {
         </div>
       </div>
 
-      {/* Slider Controls */}
-      <button className="hidden md:flex absolute left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-white/50 hover:bg-white rounded-full items-center justify-center text-gray-800 backdrop-blur-sm transition-all shadow-sm">
-        <ChevronLeft size={20} />
-      </button>
-      <button className="hidden md:flex absolute right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-white/50 hover:bg-white rounded-full items-center justify-center text-gray-800 backdrop-blur-sm transition-all shadow-sm">
-        <ChevronRight size={20} />
-      </button>
-
     </section>
   );
 };
