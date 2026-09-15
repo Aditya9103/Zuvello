@@ -422,20 +422,25 @@ const ProductManagement = () => {
                                 </div>
                                 <div>
                                     <label className="block text-white text-sm mb-1 uppercase font-bold tracking-wider">Product Reel (Video)</label>
-                                    <div className="flex items-center gap-4">
-                                        <label className="flex-1 border-2 border-dashed border-white/10 rounded-xl py-2 px-4 flex items-center justify-center hover:border-primary/50 cursor-pointer transition-colors bg-white/5">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            name="video"
+                                            value={formData.video}
+                                            onChange={handleInputChange}
+                                            placeholder="Enter video URL..."
+                                            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white focus:border-primary outline-none min-w-0"
+                                        />
+                                        <label className="border-2 border-dashed border-white/10 rounded-xl px-3 py-2.5 flex items-center justify-center hover:border-primary/50 cursor-pointer transition-colors bg-white/5 shrink-0">
                                             {uploadLoading ? (
                                                 <Loader2 className="w-5 h-5 text-primary animate-spin" />
                                             ) : (
-                                                <div className="flex items-center gap-2">
-                                                    <Upload className="w-5 h-5 text-white" />
-                                                    <span className="text-xs text-white uppercase font-bold">Upload Video</span>
-                                                </div>
+                                                <Upload className="w-5 h-5 text-white" />
                                             )}
                                             <input type="file" className="hidden" onChange={handleVideoUpload} accept="video/*" disabled={uploadLoading} />
                                         </label>
                                         {formData.video && (
-                                            <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-primary">
+                                            <div className="relative w-11 h-11 rounded-lg overflow-hidden border border-primary shrink-0">
                                                 <video src={formData.video} className="w-full h-full object-cover" />
                                                 <button
                                                     type="button"

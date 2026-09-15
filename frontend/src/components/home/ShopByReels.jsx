@@ -5,6 +5,46 @@ import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import { API_BASE_URL } from '../../api';
 
+const ReelVideo = ({ src }) => {
+    const videoRef = React.useRef(null);
+
+    React.useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        videoRef.current?.play().catch(console.error);
+                    } else {
+                        videoRef.current?.pause();
+                    }
+                });
+            },
+            { threshold: 0.5 }
+        );
+
+        if (videoRef.current) {
+            observer.observe(videoRef.current);
+        }
+
+        return () => {
+            if (videoRef.current) {
+                observer.unobserve(videoRef.current);
+            }
+        };
+    }, []);
+
+    return (
+        <video
+            ref={videoRef}
+            src={src}
+            className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity bg-zinc-900"
+            muted
+            playsInline
+            loop
+        />
+    );
+};
+
 const ShopByReels = () => {
     const navigate = useNavigate();
 
@@ -42,15 +82,7 @@ const ShopByReels = () => {
                             onClick={() => navigate(`/reels/${product._id}`)}
                             className="relative flex-none w-[calc(50%-8px)] sm:w-[200px] md:w-[280px] aspect-[9/16] rounded-[16px] md:rounded-[24px] overflow-hidden snap-center group border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
                         >
-                            <video
-                                src={product.video}
-                                className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity bg-zinc-900"
-                                muted
-                                playsInline
-                                loop
-                                onMouseOver={(e) => e.target.play()}
-                                onMouseOut={(e) => e.target.pause()}
-                            />
+                            <ReelVideo src={product.video} />
                             
                             {/* Overlay */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent flex flex-col justify-end p-2.5 md:p-4">
