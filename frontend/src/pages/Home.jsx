@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import Hero from '../components/Hero';
-import Categories from '../components/categories';
-import TrustBadges from '../components/home/TrustBadges';
-import NewArrivals from '../components/home/NewArrivals';
-import ShopByReels from '../components/home/ShopByReels';
-import BestSellers from '../components/home/BestSellers';
-import InstagramFeed from '../components/home/InstagramFeed';
-import PromoBanners from '../components/home/PromoBanners';
 import SEO from '../components/SEO';
+
+const Categories = lazy(() => import('../components/categories'));
+const TrustBadges = lazy(() => import('../components/home/TrustBadges'));
+const NewArrivals = lazy(() => import('../components/home/NewArrivals'));
+const ShopByReels = lazy(() => import('../components/home/ShopByReels'));
+const BestSellers = lazy(() => import('../components/home/BestSellers'));
+const InstagramFeed = lazy(() => import('../components/home/InstagramFeed'));
+const PromoBanners = lazy(() => import('../components/home/PromoBanners'));
 
 const Home = () => {
   return (
@@ -48,24 +49,26 @@ const Home = () => {
       {/* 1. Hero Section */}
       <Hero />
 
-      {/* 2. Shop by Category */}
-      <Categories />
-      <TrustBadges />
+      <Suspense fallback={<div className="h-screen bg-white" />}>
+        {/* 2. Shop by Category */}
+        <Categories />
+        <TrustBadges />
 
-      {/* 3. New Arrivals */}
-      <NewArrivals />
+        {/* 3. New Arrivals */}
+        <NewArrivals />
 
-      {/* 4. Best Sellers Section */}
-      <BestSellers />
+        {/* 4. Best Sellers Section */}
+        <BestSellers />
 
-      {/* Shop By Reels */}
-      <ShopByReels />
+        {/* Shop By Reels */}
+        <ShopByReels />
 
-      {/* 5. Instagram Feed */}
-      <InstagramFeed />
+        {/* 5. Instagram Feed */}
+        <InstagramFeed />
 
-      {/* 6. Promo Banners & Features */}
-      <PromoBanners />
+        {/* 6. Promo Banners & Features */}
+        <PromoBanners />
+      </Suspense>
     </main>
   );
 };

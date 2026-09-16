@@ -19,10 +19,10 @@ const Hero = () => {
           muted
           playsInline
           preload="auto"
-          poster="/combo_plushies.png"
+          fetchPriority="high"
           className="absolute inset-0 w-full h-full z-0 object-cover object-center"
         >
-          <source src="https://pdf-storage-prime.s3.eu-north-1.amazonaws.com/hero.mp4" type="video/mp4" />
+          <source src="/hero.mp4" type="video/mp4" />
         </video>
 
         {/* Main Content Container */}
