@@ -29,7 +29,7 @@ const AddressPage = () => {
     useEffect(() => {
         const token = localStorage.getItem('userToken');
         if (!token) {
-            navigate('/login?redirect=/checkout/address');
+            navigate('/login?redirect=/checkout/address', { state: { from: '/checkout/address' } });
             return;
         }
 

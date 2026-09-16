@@ -2,7 +2,7 @@ import Order from '../models/Order.js';
 import User from '../models/User.js';
 import Product from '../models/Product.js';
 import jwt from 'jsonwebtoken';
-import { sendOrderPlacedEmail, sendOrderShippedEmail, sendOrderDeliveredEmail } from '../utils/emailService.js';
+import { sendOrderPlacedEmail, sendOrderShippedEmail, sendOrderDeliveredEmail, generateInvoiceHtml } from '../utils/emailService.js';
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -178,8 +178,57 @@ export const addOrderTrackingUpdate = async (req, res) => {
 // @route   GET /api/orders/myorders
 // @access  Private
 export const getMyOrders = async (req, res) => {
-    const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
+    const orders = await Order.find({ user: req.user._id })
+        .populate('payment')
+        .sort({ createdAt: -1 });
     res.json(orders);
+};
+
+// @desc    Get order tax invoice (HTML or JSON)
+// @route   GET /api/orders/:id/invoice
+// @access  Private
+export const getOrderInvoice = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id)
+            .populate('user', 'name email phone')
+            .populate('payment');
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        const isOwner = order.user && order.user._id.toString() === req.user._id.toString();
+        if (!isOwner && !req.user.isAdmin) {
+            return res.status(401).json({ message: 'Not authorized to view this invoice' });
+        }
+
+        const invoiceNumber = `INV-${order._id.toString().slice(-8).toUpperCase()}`;
+
+        if (req.query.format === 'pdf') {
+            const { generateInvoicePDFBuffer } = await import('../utils/pdfInvoiceGenerator.js');
+            const pdfBuffer = await generateInvoicePDFBuffer(order.user, order, order.payment);
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `attachment; filename="Zuvello_Tax_Invoice_${invoiceNumber}.pdf"`);
+            return res.send(pdfBuffer);
+        }
+
+        const invoiceHtml = generateInvoiceHtml(order.user, order, order.payment);
+
+        if (req.query.format === 'html') {
+            res.setHeader('Content-Type', 'text/html');
+            return res.send(invoiceHtml);
+        }
+
+        res.json({
+            success: true,
+            invoiceNumber,
+            order,
+            invoiceHtml
+        });
+    } catch (error) {
+        console.error('❌ getOrderInvoice Error:', error);
+        res.status(500).json({ message: 'Failed to generate invoice', error: error.message });
+    }
 };
 
 // @desc    Cancel order (User)
@@ -269,5 +318,53 @@ export const getDashboardStats = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// @desc    Delete an order (Admin - Failed or Pending only)
+// @route   DELETE /api/orders/:id
+// @access  Private/Admin
+export const deleteOrder = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        // Check if order is in Pending or Failed/Cancelled state
+        const isPending = 
+            order.status === 'Pending' || 
+            order.orderStatus === 'PENDING_PAYMENT' || 
+            order.paymentStatus === 'PENDING' ||
+            order.paymentStatus === 'CREATED';
+
+        const isFailedOrCancelled = 
+            order.status === 'Cancelled' || 
+            order.orderStatus === 'CANCELLED' || 
+            order.paymentStatus === 'FAILED';
+
+        if (!isPending && !isFailedOrCancelled) {
+            return res.status(400).json({ 
+                message: 'Only pending or failed/cancelled orders can be deleted. Processing, shipped, or delivered orders cannot be deleted.' 
+            });
+        }
+
+        // If order has an associated payment record, clean it up
+        if (order.payment) {
+            try {
+                const Payment = (await import('../models/Payment.js')).default;
+                await Payment.findByIdAndDelete(order.payment);
+            } catch (pErr) {
+                console.warn('Could not delete associated payment record:', pErr.message);
+            }
+        }
+
+        await Order.findByIdAndDelete(req.params.id);
+
+        res.json({ success: true, message: 'Order deleted successfully', orderId: req.params.id });
+    } catch (error) {
+        console.error('Error deleting order:', error);
+        res.status(500).json({ message: 'Failed to delete order', error: error.message });
     }
 };

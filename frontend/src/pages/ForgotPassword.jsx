@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Phone, Lock, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
 import { API_BASE_URL } from '../api';
@@ -19,6 +19,9 @@ const ForgotPassword = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const navigate = useNavigate();
+    const location = useLocation();
+    const queryRedirect = new URLSearchParams(location.search).get('redirect');
+    const redirect = queryRedirect || location.state?.from || '/';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -50,7 +53,7 @@ const ForgotPassword = () => {
                 
                 setSuccess(data.message);
                 setTimeout(() => {
-                    navigate('/login');
+                    navigate(redirect && redirect !== '/' ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login', { state: { from: redirect } });
                 }, 2000);
             } catch (error) {
                 setError(error.response?.data?.message || 'Password reset failed');
@@ -178,7 +181,11 @@ const ForgotPassword = () => {
 
                     {step === 1 && (
                         <div className="mt-8 text-center border-t border-gray-100 pt-6">
-                            <Link to="/login" className="text-gray-500 text-[14px] font-bold hover:text-[#cf7e28] transition-colors">
+                            <Link
+                                to={redirect && redirect !== '/' ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login'}
+                                state={{ from: redirect }}
+                                className="text-gray-500 text-[14px] font-bold hover:text-[#cf7e28] transition-colors"
+                            >
                                 Back to Login
                             </Link>
                         </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-toastify';
 import SEO from '../../components/SEO';
 import TableSkeleton from '../../components/skeletons/TableSkeleton';
@@ -13,7 +13,8 @@ const OfferManagement = () => {
         code: '',
         discountPercentage: '',
         description: '',
-        isActive: true
+        isActive: true,
+        visibleToAll: false
     });
 
     const { data: coupons = [], isLoading: loading, error } = useQuery({
@@ -41,11 +42,46 @@ const OfferManagement = () => {
             const token = localStorage.getItem('adminToken');
             const config = { headers: { Authorization: `Bearer ${token}` } };
             await axios.post(`${API_BASE_URL}/coupons`, formData, config);
-            setFormData({ code: '', discountPercentage: '', description: '', isActive: true });
+            setFormData({ code: '', discountPercentage: '', description: '', isActive: true, visibleToAll: false });
             queryClient.invalidateQueries(['adminCoupons']);
+            queryClient.invalidateQueries(['offers']);
             toast.success('Offer created successfully!');
         } catch (err) {
             toast.error(err.response?.data?.message || 'Failed to create coupon');
+        }
+    };
+
+    const handleToggleVisibleToAll = async (coupon) => {
+        try {
+            const token = localStorage.getItem('adminToken');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            const updatedVal = !coupon.visibleToAll;
+            await axios.put(`${API_BASE_URL}/coupons/${coupon._id}`, { visibleToAll: updatedVal }, config);
+            
+            queryClient.setQueryData(['adminCoupons'], old =>
+                old ? old.map(c => c._id === coupon._id ? { ...c, visibleToAll: updatedVal } : c) : old
+            );
+            queryClient.invalidateQueries(['offers']);
+            toast.success(updatedVal ? `Coupon "${coupon.code}" is now visible on Exclusive Offers page` : `Coupon "${coupon.code}" is now hidden from Exclusive Offers page`);
+        } catch (err) {
+            toast.error('Failed to update coupon visibility');
+        }
+    };
+
+    const handleToggleActive = async (coupon) => {
+        try {
+            const token = localStorage.getItem('adminToken');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            const updatedVal = !coupon.isActive;
+            await axios.put(`${API_BASE_URL}/coupons/${coupon._id}`, { isActive: updatedVal }, config);
+            
+            queryClient.setQueryData(['adminCoupons'], old =>
+                old ? old.map(c => c._id === coupon._id ? { ...c, isActive: updatedVal } : c) : old
+            );
+            queryClient.invalidateQueries(['offers']);
+            toast.success(updatedVal ? `Coupon "${coupon.code}" activated` : `Coupon "${coupon.code}" deactivated`);
+        } catch (err) {
+            toast.error('Failed to update coupon status');
         }
     };
 
@@ -56,6 +92,7 @@ const OfferManagement = () => {
                 const config = { headers: { Authorization: `Bearer ${token}` } };
                 await axios.delete(`${API_BASE_URL}/coupons/${id}`, config);
                 queryClient.invalidateQueries(['adminCoupons']);
+                queryClient.invalidateQueries(['offers']);
                 toast.success('Offer deleted successfully!');
             } catch (err) {
                 toast.error('Failed to delete coupon');
@@ -82,7 +119,7 @@ const OfferManagement = () => {
                             onChange={handleChange}
                             required
                             placeholder="e.g. SAVE20"
-                            className="w-full bg-white/10 border border-white/20 text-white rounded-xl px-4 py-2 uppercase"
+                            className="w-full bg-white/10 border border-white/20 text-white rounded-xl px-4 py-2 uppercase font-mono font-bold"
                         />
                     </div>
                     <div>
@@ -111,18 +148,33 @@ const OfferManagement = () => {
                             className="w-full bg-white/10 border border-white/20 text-white rounded-xl px-4 py-2"
                         />
                     </div>
-                    <div className="md:col-span-2 flex items-center gap-2">
-                        <input
-                            type="checkbox"
-                            name="isActive"
-                            checked={formData.isActive}
-                            onChange={handleChange}
-                            className="w-4 h-4"
-                        />
-                        <label className="text-white">Active (Visible and usable)</label>
+                    <div className="md:col-span-2 flex flex-wrap gap-4 items-center pt-1">
+                        <label className="flex items-center gap-2 cursor-pointer select-none bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl hover:bg-white/10 transition-colors">
+                            <input
+                                type="checkbox"
+                                name="isActive"
+                                checked={formData.isActive}
+                                onChange={handleChange}
+                                className="w-4 h-4 rounded text-primary accent-[#cf7e28] cursor-pointer"
+                            />
+                            <span className="text-white text-xs font-bold">Active (Usable at Checkout)</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer select-none bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl hover:bg-white/10 transition-colors">
+                            <input
+                                type="checkbox"
+                                name="visibleToAll"
+                                checked={formData.visibleToAll}
+                                onChange={handleChange}
+                                className="w-4 h-4 rounded text-primary accent-[#cf7e28] cursor-pointer"
+                            />
+                            <span className="text-white text-xs font-bold flex items-center gap-1.5">
+                                <span>Visible to all</span>
+                                <span className="text-gray-400 font-normal text-[11px]">(Shows on Exclusive Offers page)</span>
+                            </span>
+                        </label>
                     </div>
-                    <div className="md:col-span-2">
-                        <button type="submit" className="bg-primary hover:bg-primary/90 text-dark font-bold px-6 py-2 rounded-xl flex items-center gap-2">
+                    <div className="md:col-span-2 pt-2">
+                        <button type="submit" className="bg-primary hover:bg-primary/90 text-dark font-extrabold px-6 py-2.5 rounded-xl flex items-center gap-2 transition-all active:scale-95 shadow-md">
                             <Plus size={20} /> Create Coupon
                         </button>
                     </div>
@@ -130,7 +182,7 @@ const OfferManagement = () => {
             </div>
 
             {loading ? (
-                <TableSkeleton columns={5} rows={5} />
+                <TableSkeleton columns={6} rows={5} />
             ) : (
                 <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
                     <table className="w-full text-left text-white">
@@ -140,24 +192,49 @@ const OfferManagement = () => {
                                 <th className="p-4 font-bold">Discount</th>
                                 <th className="p-4 font-bold">Description</th>
                                 <th className="p-4 font-bold">Status</th>
+                                <th className="p-4 font-bold">Visible to All</th>
                                 <th className="p-4 font-bold text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {coupons.map((coupon) => (
-                                <tr key={coupon._id} className="border-t border-white/5">
-                                    <td className="p-4 font-black text-primary">{coupon.code}</td>
-                                    <td className="p-4">{coupon.discountPercentage}%</td>
-                                    <td className="p-4">{coupon.description}</td>
+                                <tr key={coupon._id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
+                                    <td className="p-4 font-black font-mono text-primary text-sm">{coupon.code}</td>
+                                    <td className="p-4 font-bold">{coupon.discountPercentage}%</td>
+                                    <td className="p-4 text-gray-300 text-sm">{coupon.description}</td>
                                     <td className="p-4">
-                                        <span className={`px-2 py-1 rounded-md text-xs font-bold ${coupon.isActive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                                        <button
+                                            onClick={() => handleToggleActive(coupon)}
+                                            className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all border ${coupon.isActive ? 'bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30'}`}
+                                            title="Click to toggle Active status"
+                                        >
                                             {coupon.isActive ? 'Active' : 'Inactive'}
-                                        </span>
+                                        </button>
+                                    </td>
+                                    <td className="p-4">
+                                        <button
+                                            onClick={() => handleToggleVisibleToAll(coupon)}
+                                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all border ${coupon.visibleToAll ? 'bg-[#cf7e28]/20 text-[#cf7e28] border-[#cf7e28]/30 hover:bg-[#cf7e28]/30' : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'}`}
+                                            title="Click to toggle visibility on Exclusive Offers page"
+                                        >
+                                            {coupon.visibleToAll ? (
+                                                <>
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                    <span>Visible on Offers</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <EyeOff className="w-3.5 h-3.5" />
+                                                    <span>Hidden (Private)</span>
+                                                </>
+                                            )}
+                                        </button>
                                     </td>
                                     <td className="p-4 text-right">
                                         <button
                                             onClick={() => handleDelete(coupon._id)}
-                                            className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                                            className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-lg transition-colors"
+                                            title="Delete Coupon"
                                         >
                                             <Trash2 size={18} />
                                         </button>
@@ -166,7 +243,7 @@ const OfferManagement = () => {
                             ))}
                             {coupons.length === 0 && (
                                 <tr>
-                                    <td colSpan="5" className="p-8 text-center text-gray-400">No coupons found.</td>
+                                    <td colSpan="6" className="p-8 text-center text-gray-400">No coupons found.</td>
                                 </tr>
                             )}
                         </tbody>

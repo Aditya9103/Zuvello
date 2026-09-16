@@ -4,7 +4,7 @@ import Coupon from '../models/Coupon.js';
 // @route   POST /api/coupons
 // @access  Private/Admin
 export const createCoupon = async (req, res) => {
-    const { code, discountPercentage, description, isActive } = req.body;
+    const { code, discountPercentage, description, isActive, visibleToAll } = req.body;
 
     try {
         const couponExists = await Coupon.findOne({ code: code.toUpperCase() });
@@ -17,7 +17,8 @@ export const createCoupon = async (req, res) => {
             code,
             discountPercentage,
             description,
-            isActive
+            isActive: isActive !== undefined ? Boolean(isActive) : true,
+            visibleToAll: Boolean(visibleToAll)
         });
 
         res.status(201).json(coupon);
@@ -31,7 +32,7 @@ export const createCoupon = async (req, res) => {
 // @access  Public
 export const getCoupons = async (req, res) => {
     try {
-        const coupons = await Coupon.find({ isActive: true }).sort({ createdAt: -1 });
+        const coupons = await Coupon.find({ isActive: true, visibleToAll: true }).sort({ createdAt: -1 });
         res.json(coupons);
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch coupons', error: error.message });
@@ -47,6 +48,30 @@ export const getAdminCoupons = async (req, res) => {
         res.json(coupons);
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch coupons', error: error.message });
+    }
+};
+
+// @desc    Update a coupon (Admin)
+// @route   PUT /api/coupons/:id
+// @access  Private/Admin
+export const updateCoupon = async (req, res) => {
+    try {
+        const coupon = await Coupon.findById(req.params.id);
+
+        if (!coupon) {
+            return res.status(404).json({ message: 'Coupon not found' });
+        }
+
+        if (req.body.code !== undefined) coupon.code = req.body.code.toUpperCase();
+        if (req.body.discountPercentage !== undefined) coupon.discountPercentage = req.body.discountPercentage;
+        if (req.body.description !== undefined) coupon.description = req.body.description;
+        if (req.body.isActive !== undefined) coupon.isActive = Boolean(req.body.isActive);
+        if (req.body.visibleToAll !== undefined) coupon.visibleToAll = Boolean(req.body.visibleToAll);
+
+        const updatedCoupon = await coupon.save();
+        res.json(updatedCoupon);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to update coupon', error: error.message });
     }
 };
 

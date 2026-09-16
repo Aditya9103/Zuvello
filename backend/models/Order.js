@@ -31,13 +31,34 @@ const orderSchema = new mongoose.Schema({
     paymentMethod: {
         type: String,
         required: true,
-        enum: ['COD', 'UPI']
+        enum: ['COD', 'UPI', 'Razorpay', 'Online']
     },
     paymentResult: {
         id: String,
         status: String,
         update_time: String,
-        email_address: String
+        email_address: String,
+        razorpay_payment_id: String,
+        razorpay_order_id: String,
+        razorpay_signature: String
+    },
+    razorpayOrderId: {
+        type: String,
+        index: true
+    },
+    payment: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Payment'
+    },
+    paymentStatus: {
+        type: String,
+        enum: ['CREATED', 'PENDING', 'AUTHORIZED', 'CAPTURED', 'FAILED', 'REFUND_PENDING', 'REFUNDED', 'PARTIALLY_REFUNDED'],
+        default: 'PENDING'
+    },
+    orderStatus: {
+        type: String,
+        enum: ['PENDING_PAYMENT', 'PAYMENT_PROCESSING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED'],
+        default: 'PENDING_PAYMENT'
     },
     totalPrice: {
         type: Number,

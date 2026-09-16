@@ -19,11 +19,11 @@ const ProductCard = ({ product, isWishlistPage = false }) => {
 
     const handleOrderNow = (e) => {
         e.stopPropagation();
+        addToCart({ ...product, selectedSize: product.sizes?.[0] || 'Medium (20-40 cm)' }, 1);
         if (!localStorage.getItem('userToken')) {
-            navigate('/login?redirect=/checkout/address');
+            navigate('/login?redirect=/checkout/address', { state: { from: '/checkout/address' } });
             return;
         }
-        addToCart({ ...product, selectedSize: product.sizes?.[0] || 'Medium (20-40 cm)' }, 1);
         navigate('/checkout/address');
     };
 

@@ -144,11 +144,11 @@ const ProductDetails = () => {
     };
 
     const handleBuyNow = () => {
+        addToCart({ ...product, selectedSize }, quantity);
         if (!localStorage.getItem('userToken')) {
-            navigate('/login?redirect=/checkout/address');
+            navigate('/login?redirect=/checkout/address', { state: { from: '/checkout/address' } });
             return;
         }
-        addToCart({ ...product, selectedSize }, quantity);
         navigate('/checkout/address');
     };
 

@@ -205,7 +205,7 @@ const CartPage = () => {
                                 onClick={() => {
                                     const token = localStorage.getItem('userToken');
                                     if (!token) {
-                                        navigate('/login?redirect=/checkout/address');
+                                        navigate('/login?redirect=/checkout/address', { state: { from: '/checkout/address' } });
                                     } else {
                                         navigate('/checkout/address');
                                     }

@@ -21,6 +21,10 @@ const couponSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
+    },
+    visibleToAll: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

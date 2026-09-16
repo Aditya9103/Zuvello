@@ -21,7 +21,7 @@ const ProfilePage = () => {
     useEffect(() => {
         const storedUser = localStorage.getItem('userInfo');
         if (!storedUser) {
-            navigate('/login');
+            navigate('/login?redirect=/profile', { state: { from: '/profile' } });
             return;
         }
         setUserInfo(JSON.parse(storedUser));

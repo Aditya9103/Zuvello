@@ -15,7 +15,8 @@ const Login = () => {
 
     const navigate = useNavigate();
     const location = useLocation();
-    const redirect = new URLSearchParams(location.search).get('redirect') || '/';
+    const queryRedirect = new URLSearchParams(location.search).get('redirect');
+    const redirect = queryRedirect || location.state?.from || '/';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -27,7 +28,7 @@ const Login = () => {
 
             localStorage.setItem('userToken', data.token);
             localStorage.setItem('userInfo', JSON.stringify(data));
-            navigate(redirect);
+            navigate(redirect, { replace: true });
         } catch (error) {
             setError(error.response?.data?.message || 'Invalid email or password');
         } finally {
@@ -77,7 +78,11 @@ const Login = () => {
                                 <label className="text-[13px] font-extrabold text-black">
                                     Password
                                 </label>
-                                <Link to="/forgot-password" className="text-[12px] font-bold text-[#cf7e28] hover:underline">
+                                <Link
+                                    to={redirect && redirect !== '/' ? `/forgot-password?redirect=${encodeURIComponent(redirect)}` : '/forgot-password'}
+                                    state={{ from: redirect }}
+                                    className="text-[12px] font-bold text-[#cf7e28] hover:underline"
+                                >
                                     Forgot Password?
                                 </Link>
                             </div>
@@ -114,7 +119,11 @@ const Login = () => {
                     <div className="mt-8 text-center border-t border-gray-100 pt-6">
                         <p className="text-gray-500 text-[14px]">
                             Don't have an account?{" "}
-                            <Link to="/register" className="text-[#cf7e28] font-bold hover:underline">
+                            <Link
+                                to={redirect && redirect !== '/' ? `/register?redirect=${encodeURIComponent(redirect)}` : '/register'}
+                                state={{ from: redirect }}
+                                className="text-[#cf7e28] font-bold hover:underline"
+                            >
                                 Register Now !
                             </Link>
                         </p>

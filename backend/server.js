@@ -14,6 +14,7 @@ import couponRoutes from "./routes/couponRoutes.js";
 import instagramRoutes from "./routes/instagramRoutes.js";
 import sitemapRoutes from "./routes/sitemapRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -29,7 +30,11 @@ app.use(cors({
     ],
     credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    }
+}));
 
 // Request and Error logging middleware (PID: ${process.pid})
 app.use((req, res, next) => {
@@ -67,8 +72,9 @@ app.use("/api/coupons", couponRoutes);
 app.use("/api/instagram", instagramRoutes);
 app.use("/api/sitemap.xml", sitemapRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/payment", paymentRoutes);
 
-console.log('✅ Routes mounted: /api/auth, /api/products, /api/blogs, /api/orders, /api/upload, /api/admin, /api/enquiry, /api/coupons, /api/instagram, /api/reviews');
+console.log('✅ Routes mounted: /api/auth, /api/products, /api/blogs, /api/orders, /api/upload, /api/admin, /api/enquiry, /api/coupons, /api/instagram, /api/reviews, /api/payment');
 
 
 const PORT = process.env.PORT || 5000;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { User, Mail, Phone, Lock, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
 import { API_BASE_URL } from '../api';
@@ -19,6 +19,9 @@ const Register = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const location = useLocation();
+    const queryRedirect = new URLSearchParams(location.search).get('redirect');
+    const redirect = queryRedirect || location.state?.from || '/';
 
     const [step, setStep] = useState(1);
     const [otp, setOtp] = useState('');
@@ -57,7 +60,7 @@ const Register = () => {
 
                 localStorage.setItem('userToken', data.token);
                 localStorage.setItem('userInfo', JSON.stringify(data));
-                navigate('/');
+                navigate(redirect, { replace: true });
             } catch (error) {
                 setError(error.response?.data?.message || 'Verification failed');
             } finally {
@@ -215,7 +218,11 @@ const Register = () => {
                         <div className="mt-8 text-center border-t border-gray-100 pt-6">
                             <p className="text-gray-500 text-[14px]">
                                 Already have an account?{" "}
-                                <Link to="/login" className="text-[#cf7e28] font-bold hover:underline">
+                                <Link
+                                    to={redirect && redirect !== '/' ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login'}
+                                    state={{ from: redirect }}
+                                    className="text-[#cf7e28] font-bold hover:underline"
+                                >
                                     Login here
                                 </Link>
                             </p>

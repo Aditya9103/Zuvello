@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Package, Clock, Truck, CheckCircle, XCircle, ChevronDown, ChevronUp, ShoppingBag, MapPin } from 'lucide-react';
+import { Package, Clock, Truck, CheckCircle, XCircle, ChevronDown, ChevronUp, ShoppingBag, MapPin, FileText } from 'lucide-react';
 import { API_BASE_URL } from '../api';
 import SEO from '../components/SEO';
 import OrderSkeleton from '../components/skeletons/OrderSkeleton';
+import InvoiceModal from '../components/InvoiceModal';
 
 const MyOrders = () => {
     const [expandedOrder, setExpandedOrder] = useState(null);
+    const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState(null);
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
@@ -17,7 +20,7 @@ const MyOrders = () => {
         queryFn: async () => {
             const token = localStorage.getItem('userToken');
             if (!token) {
-                navigate('/login');
+                navigate('/login?redirect=/my-orders', { state: { from: '/my-orders' } });
                 throw new Error("No token");
             }
             const { data } = await axios.get(`${API_BASE_URL}/orders/myorders`, {
@@ -28,6 +31,16 @@ const MyOrders = () => {
         staleTime: 5 * 60 * 1000,
         retry: false,
     });
+
+    useEffect(() => {
+        const invoiceOrderId = searchParams.get('viewInvoice');
+        if (invoiceOrderId && orders.length > 0) {
+            const found = orders.find(o => o._id === invoiceOrderId);
+            if (found) {
+                setSelectedInvoiceOrder(found);
+            }
+        }
+    }, [searchParams, orders]);
 
     const handleCancelOrder = async (orderId) => {
         if (window.confirm("Are you sure you want to cancel this order?")) {
@@ -93,7 +106,7 @@ const MyOrders = () => {
                                         <div className="text-[#1c1c1c] font-bold text-sm">#{order._id.toUpperCase()}</div>
                                         <div className="text-sm text-gray-500 font-medium mt-1">Ordered on {new Date(order.createdAt).toLocaleDateString()}</div>
                                     </div>
-                                    <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
+                                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
                                         <div className="text-right">
                                             <div className="text-xs text-gray-500 font-extrabold uppercase tracking-widest mb-1">Total Paid</div>
                                             <div className="text-lg font-black text-[#cf7e28]">₹{order.totalPrice}</div>
@@ -102,6 +115,17 @@ const MyOrders = () => {
                                             {getStatusIcon(order.status)}
                                             <span className="text-[#1c1c1c] text-xs font-bold uppercase tracking-wider">{order.status}</span>
                                         </div>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedInvoiceOrder(order);
+                                            }}
+                                            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#fdf3e7] hover:bg-[#faebd7] text-[#cf7e28] text-xs font-extrabold rounded-xl border border-[#f5eadb] transition-all active:scale-95 shadow-sm"
+                                            title="View & Download PDF Invoice"
+                                        >
+                                            <FileText className="w-3.5 h-3.5" />
+                                            <span>Invoice (PDF)</span>
+                                        </button>
                                         <button className="p-2 text-gray-400 hover:text-[#cf7e28] transition-colors rounded-full hover:bg-[#cf7e28]/10">
                                             {expandedOrder === order._id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                                         </button>
@@ -119,7 +143,7 @@ const MyOrders = () => {
                                                     {order.orderItems.map((item, idx) => (
                                                         <div key={idx} className="flex items-center gap-4 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
                                                             <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-gray-100">
-                                                                <img src={item.image} alt={item.name} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
+                                                                <img src={item.image} alt={item.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                                                             </div>
                                                             <div className="flex-1">
                                                                 <div className="text-[#1c1c1c] font-bold text-sm leading-tight mb-1">{item.name}</div>
@@ -171,16 +195,24 @@ const MyOrders = () => {
                                                         <p className="text-gray-500 text-sm font-medium text-center py-4">Your order is being processed. Tracking details will appear here shortly.</p>
                                                     )}
                                                     
-                                                    {(order.status === 'Pending' || order.status === 'Processing') && (
-                                                        <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end">
+                                                    <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
+                                                        <button 
+                                                            onClick={() => setSelectedInvoiceOrder(order)}
+                                                            className="flex items-center gap-2 text-xs font-bold text-[#cf7e28] hover:text-[#b56e22] bg-[#cf7e28]/10 hover:bg-[#cf7e28]/20 px-4 py-2 rounded-lg transition-colors"
+                                                        >
+                                                            <FileText className="w-4 h-4" />
+                                                            <span>View Tax Invoice</span>
+                                                        </button>
+
+                                                        {(order.status === 'Pending' || order.status === 'Processing') && (
                                                             <button 
                                                                 onClick={() => handleCancelOrder(order._id)}
                                                                 className="text-xs font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-4 py-2 rounded-lg transition-colors"
                                                             >
                                                                 Cancel Order
                                                             </button>
-                                                        </div>
-                                                    )}
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -190,6 +222,13 @@ const MyOrders = () => {
                         ))
                     )}
                 </div>
+
+                {/* Tax Invoice Modal */}
+                <InvoiceModal
+                    order={selectedInvoiceOrder}
+                    isOpen={!!selectedInvoiceOrder}
+                    onClose={() => setSelectedInvoiceOrder(null)}
+                />
             </div>
         </div>
     );

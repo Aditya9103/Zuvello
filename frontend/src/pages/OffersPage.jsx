@@ -11,8 +11,8 @@ const OffersPage = () => {
     const { data: offers = [], isLoading } = useQuery({
         queryKey: ['offers'],
         queryFn: async () => {
-            const { data } = await axios.get(`${API_BASE_URL}/coupons`); // Fixed URL to use API_BASE_URL
-            return Array.isArray(data) ? data : [];
+            const { data } = await axios.get(`${API_BASE_URL}/coupons`);
+            return Array.isArray(data) ? data.filter(c => c.visibleToAll) : [];
         },
         staleTime: 5 * 60 * 1000,
     });
