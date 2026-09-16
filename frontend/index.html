@@ -6,11 +6,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <meta name="theme-color" content="#cf7e28" />
 
-  <!-- Resource Hints for Performance -->
+  <!-- Resource Hints for High Priority Hero Video Loading -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="icon" type="image/png" href="/logo.png" />
-  <link rel="preload" href="/hero.mp4" as="video" type="video/mp4" />
+  <link rel="preload" href="/hero-poster.jpg" as="image" type="image/jpeg" fetchpriority="high" />
+  <link rel="preload" href="/hero.mp4" as="fetch" type="video/mp4" crossorigin="anonymous" fetchpriority="high" />
+
+  <!-- Immediate Early Media Buffering (Loads before React/DOM bundle execution) -->
+  <script>
+    (function () {
+      try {
+        var v = document.createElement('video');
+        v.preload = 'auto';
+        v.src = '/hero.mp4';
+        v.muted = true;
+        v.load();
+      } catch (e) { }
+    })();
+  </script>
 
   <!-- Fundamental SEO -->
   <title>Zuvello | Premium Plushies, Toys & E-commerce Store</title>

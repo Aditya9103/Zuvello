@@ -3,6 +3,45 @@ import { Link } from "react-router-dom";
 import { ShieldCheck, Heart, RefreshCcw, Lock, PlayCircle, ChevronRight, ChevronLeft } from "lucide-react";
 
 const Hero = () => {
+  const video1Ref = React.useRef(null);
+  const video2Ref = React.useRef(null);
+  const [activeVideo, setActiveVideo] = React.useState(1);
+
+  React.useEffect(() => {
+    const v1 = video1Ref.current;
+    const v2 = video2Ref.current;
+    if (!v1 || !v2) return;
+
+    v1.play().catch(() => {});
+    let currentActive = 1;
+    let animId;
+
+    const checkLoop = () => {
+      if (currentActive === 1) {
+        if (v1.duration && v1.currentTime >= v1.duration - 0.25) {
+          v2.currentTime = 0;
+          v2.play().catch(() => {});
+          currentActive = 2;
+          setActiveVideo(2);
+        }
+      } else {
+        if (v2.duration && v2.currentTime >= v2.duration - 0.25) {
+          v1.currentTime = 0;
+          v1.play().catch(() => {});
+          currentActive = 1;
+          setActiveVideo(1);
+        }
+      }
+      animId = requestAnimationFrame(checkLoop);
+    };
+
+    animId = requestAnimationFrame(checkLoop);
+
+    return () => {
+      cancelAnimationFrame(animId);
+    };
+  }, []);
+
   return (
     <section className="relative w-full h-[260px] sm:h-[320px] md:h-[650px] lg:h-[700px] bg-white md:bg-[#fbf5f2] font-sans flex justify-center px-4 pt-4 md:p-0">
 
@@ -12,15 +51,28 @@ const Hero = () => {
         {/* Soft Background Gradient for Left Side */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#fbf5f2]/80 via-[#fbf5f2]/40 to-transparent z-10 pointer-events-none w-full" />
 
-        {/* Background Video */}
+        {/* Gapless Seamless Video Loop (Zero Pause on Restart) */}
         <video
+          ref={video1Ref}
           autoPlay
-          loop
           muted
           playsInline
           preload="auto"
-          fetchPriority="high"
-          className="absolute inset-0 w-full h-full z-0 object-cover object-center"
+          poster="/hero-poster.jpg"
+          className={`absolute inset-0 w-full h-full z-0 object-cover object-center transition-opacity duration-300 pointer-events-none ${
+            activeVideo === 1 ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <source src="/hero.mp4" type="video/mp4" />
+        </video>
+        <video
+          ref={video2Ref}
+          muted
+          playsInline
+          preload="auto"
+          className={`absolute inset-0 w-full h-full z-0 object-cover object-center transition-opacity duration-300 pointer-events-none ${
+            activeVideo === 2 ? "opacity-100" : "opacity-0"
+          }`}
         >
           <source src="/hero.mp4" type="video/mp4" />
         </video>
